@@ -56,10 +56,15 @@ header {
 .badge {
   font-family: var(--mono);
   font-size: 0.65rem;
-  color: var(--gray);
-  border: 1px solid var(--border);
+  color: var(--green);
+  border: 1px solid var(--green);
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
+  transition: all 0.3s;
+}
+.badge.synthetic {
+  color: var(--orange);
+  border-color: var(--orange);
 }
 
 /* ── Hero ── */
@@ -344,12 +349,12 @@ footer {
 
 <header>
   <div class="logo">Stock<span>Lens</span></div>
-  <span class="badge">LINEAR REGRESSION · TECHNICAL ANALYSIS</span>
+  <span class="badge" id="data-badge">LIVE DATA · YAHOO FINANCE</span>
 </header>
 
 <section class="hero">
   <h1>Market Analysis<br><em>at a glance</em></h1>
-  <p>Select a ticker · Run analysis · Explore indicators &amp; ML forecast</p>
+  <p>Real market data · Select ticker · Run analysis · Explore indicators &amp; ML forecast</p>
 </section>
 
 <div class="control-panel">
@@ -413,7 +418,7 @@ footer {
 </div>
 
 <footer>
-  ⚡ StockLens · Synthetic data · Linear Regression · Not financial advice
+  ⚡ StockLens · Real market data via Yahoo Finance · Linear Regression · Not financial advice
 </footer>
 
 <script>
@@ -461,6 +466,16 @@ footer {
       clearInterval(msgInterval);
 
       if (data.error) throw new Error(data.error);
+
+      // Update data source badge
+      const badge = document.getElementById("data-badge");
+      if (data.is_real) {
+        badge.textContent = "● LIVE DATA · YAHOO FINANCE";
+        badge.classList.remove("synthetic");
+      } else {
+        badge.textContent = "⚠ SYNTHETIC DATA (fallback)";
+        badge.classList.add("synthetic");
+      }
 
       // Stats
       const statsRow = document.getElementById("stats-row");

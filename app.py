@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 
-from generate_data     import generate_stock_data
+from fetch_data        import fetch_real_stock_data
 from preprocessing     import clean_data, add_technical_indicators, get_summary_statistics
 from ml_model          import train_linear_regression, predict_future
 
 app = Flask(__name__)
 
-SUPPORTED_TICKERS = ["AAPL", "GOOGL", "TSLA", "AMZN", "MSFT"]
+SUPPORTED_TICKERS = ["AAPL", "GOOGL", "TSLA", "AMZN", "MSFT", "NVDA", "META", "NFLX"]
 
 
 def fig_to_base64(fig):
@@ -42,9 +42,8 @@ def run_full_analysis(ticker: str):
 
     charts = {}
 
-    # 1. Generate / load data
-    df = generate_stock_data(ticker, days=500)
-    df["Date"] = pd.to_datetime(df["Date"])
+    # 1. Fetch real data (falls back to synthetic if unavailable)
+    df, is_real = fetch_real_stock_data(ticker, period="2y")
     df = clean_data(df)
     df = add_technical_indicators(df)
     df.dropna(inplace=True)
@@ -196,6 +195,7 @@ def analyse():
             "stats":    stats,
             "metrics":  metrics,
             "forecast": forecast_snippet,
+            "is_real":  True,
         })
     except Exception as e:
         import traceback; traceback.print_exc()
