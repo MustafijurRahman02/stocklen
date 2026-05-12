@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StockLens · Market Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0d1117;
+  --card:     #161b22;
+  --border:   #21262d;
+  --blue:     #58a6ff;
+  --green:    #3fb950;
+  --red:      #f85149;
+  --orange:   #e3b341;
+  --purple:   #bc8cff;
+  --teal:     #76e3ea;
+  --gray:     #8b949e;
+  --white:    #e6edf3;
+  --mono:     'Space Mono', monospace;
+  --sans:     'Syne', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--sans);
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,17,23,0.92);
+  backdrop-filter: blur(10px);
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--blue);
+}
+.logo span { color: var(--white); }
+
+.badge {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--gray);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+/* ── Hero ── */
+.hero {
+  text-align: center;
+  padding: 4rem 1rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(88,166,255,0.10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 0.75rem;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--blue);
+}
+
+.hero p {
+  color: var(--gray);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+/* ── Control Panel ── */
+.control-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  flex-wrap: wrap;
+}
+
+.ticker-btn {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 0.6rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--gray);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ticker-btn:hover {
+  border-color: var(--blue);
+  color: var(--white);
+}
+
+.ticker-btn.active {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: rgba(88,166,255,0.08);
+  box-shadow: 0 0 14px rgba(88,166,255,0.15);
+}
+
+.run-btn {
+  padding: 0.65rem 2.2rem;
+  background: var(--blue);
+  color: #0d1117;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+
+.run-btn:hover { background: #79bcff; transform: translateY(-1px); }
+.run-btn:active { transform: translateY(0); }
+.run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── Loading ── */
+#loading {
+  display: none;
+  text-align: center;
+  padding: 3rem;
+  color: var(--gray);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Stats Row ── */
+#stats-row {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 2rem 2.5rem;
+}
+
+.stat-card {
+  background: var(--card);
+  padding: 1.1rem 1.3rem;
+  transition: background 0.2s;
+}
+
+.stat-card:hover { background: #1c2128; }
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 0.35rem;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.stat-value.pos { color: var(--green); }
+.stat-value.neg { color: var(--red); }
+.stat-value.neu { color: var(--blue); }
+
+/* ── ML Metrics ── */
+#ml-metrics {
+  display: none;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 2rem 2.5rem;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* ── Charts ── */
+#charts-section {
+  display: none;
+  padding: 0 2rem 4rem;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--gray);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  padding-left: 2px;
+  border-left: 2px solid var(--blue);
+  padding-left: 0.75rem;
+}
+
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  transition: border-color 0.2s;
+}
+
+.chart-card:hover { border-color: #30363d; }
+
+.chart-card img {
+  width: 100%;
+  display: block;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Forecast Table ── */
+#forecast-section {
+  display: none;
+  margin: 0 2rem 4rem;
+}
+
+.forecast-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+th {
+  background: #1c2128;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-size: 0.62rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--white);
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(88,166,255,0.04); }
+
+.up   { color: var(--green); }
+.down { color: var(--red); }
+
+/* ── Error ── */
+#error-box {
+  display: none;
+  margin: 1rem 2rem;
+  padding: 1rem 1.5rem;
+  background: rgba(248,81,73,0.1);
+  border: 1px solid rgba(248,81,73,0.3);
+  border-radius: 8px;
+  color: var(--red);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--gray);
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 700px) {
+  header { padding: 1rem 1.2rem; }
+  #stats-row, #ml-metrics, #charts-section, #forecast-section { margin: 0 1rem 2rem; }
+  .chart-grid { grid-template-columns: 1fr; }
+  #ml-metrics { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Stock<span>Lens</span></div>
+  <span class="badge">LINEAR REGRESSION · TECHNICAL ANALYSIS</span>
+</header>
+
+<section class="hero">
+  <h1>Market Analysis<br><em>at a glance</em></h1>
+  <p>Select a ticker · Run analysis · Explore indicators &amp; ML forecast</p>
+</section>
+
+<div class="control-panel">
+  {% for t in tickers %}
+  <button class="ticker-btn {% if loop.first %}active{% endif %}" data-ticker="{{ t }}">{{ t }}</button>
+  {% endfor %}
+  <button class="run-btn" id="run-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    Run Analysis
+  </button>
+</div>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div id="loading-msg">Generating data &amp; running ML model…</div>
+</div>
+
+<div id="error-box"></div>
+
+<!-- Stats row -->
+<div id="stats-row" style="display:none;"></div>
+
+<!-- ML Metrics -->
+<div id="ml-metrics" style="display:none;"></div>
+
+<!-- Charts -->
+<div id="charts-section" style="display:none;">
+  <p class="section-label">Price &amp; Moving Averages</p>
+  <div class="chart-card"><img id="chart-price" src="" alt="Price & MA"></div>
+
+  <p class="section-label">Volume</p>
+  <div class="chart-card"><img id="chart-volume" src="" alt="Volume"></div>
+
+  <div class="chart-grid">
+    <div>
+      <p class="section-label">RSI (14-day)</p>
+      <div class="chart-card"><img id="chart-rsi" src="" alt="RSI"></div>
+    </div>
+    <div>
+      <p class="section-label">MACD</p>
+      <div class="chart-card"><img id="chart-macd" src="" alt="MACD"></div>
+    </div>
+  </div>
+
+  <p class="section-label">Return Distribution</p>
+  <div class="chart-card"><img id="chart-returns" src="" alt="Returns"></div>
+
+  <p class="section-label">ML Predictions &amp; 30-Day Forecast</p>
+  <div class="chart-card"><img id="chart-ml" src="" alt="ML Predictions"></div>
+</div>
+
+<!-- Forecast table -->
+<div id="forecast-section" style="display:none;">
+  <p class="section-label">30-Day Forecast Prices</p>
+  <div class="forecast-table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Date</th><th>Predicted Price (USD)</th><th>Change</th></tr></thead>
+      <tbody id="forecast-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  ⚡ StockLens · Synthetic data · Linear Regression · Not financial advice
+</footer>
+
+<script>
+  let selectedTicker = "{{ tickers[0] }}";
+
+  document.querySelectorAll(".ticker-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".ticker-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedTicker = btn.dataset.ticker;
+    });
+  });
+
+  const runBtn = document.getElementById("run-btn");
+
+  runBtn.addEventListener("click", async () => {
+    runBtn.disabled = true;
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("error-box").style.display = "none";
+    document.getElementById("stats-row").style.display = "none";
+    document.getElementById("ml-metrics").style.display = "none";
+    document.getElementById("charts-section").style.display = "none";
+    document.getElementById("forecast-section").style.display = "none";
+
+    const msgs = [
+      "Simulating price data…",
+      "Computing technical indicators…",
+      "Training Linear Regression model…",
+      "Generating 30-day forecast…",
+      "Rendering charts…"
+    ];
+    let mi = 0;
+    const msgEl = document.getElementById("loading-msg");
+    const msgInterval = setInterval(() => {
+      msgEl.textContent = msgs[Math.min(mi++, msgs.length - 1)];
+    }, 1200);
+
+    try {
+      const res = await fetch("/analyse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticker: selectedTicker })
+      });
+      const data = await res.json();
+      clearInterval(msgInterval);
+
+      if (data.error) throw new Error(data.error);
+
+      // Stats
+      const statsRow = document.getElementById("stats-row");
+      statsRow.innerHTML = "";
+      const statColors = {
+        "Total Return (%)": v => v >= 0 ? "pos" : "neg",
+        "Sharpe Ratio":     v => v >= 1 ? "pos" : v >= 0 ? "neu" : "neg",
+        "Latest Close":     _ => "neu",
+        "Max Price":        _ => "pos",
+        "Min Price":        _ => "neg",
+      };
+      const showStats = ["Latest Close","Total Return (%)","Sharpe Ratio","Max Price","Min Price","Avg Daily Return","Volatility (std)"];
+      showStats.forEach(k => {
+        if (!(k in data.stats)) return;
+        const v = data.stats[k];
+        const cls = (statColors[k] || (_ => "neu"))(parseFloat(v));
+        statsRow.innerHTML += `
+          <div class="stat-card">
+            <div class="stat-label">${k}</div>
+            <div class="stat-value ${cls}">${typeof v === "number" ? v.toLocaleString() : v}</div>
+          </div>`;
+      });
+      statsRow.style.display = "grid";
+
+      // ML Metrics
+      const mlEl = document.getElementById("ml-metrics");
+      mlEl.innerHTML = "";
+      [["RMSE","neg"],["MAE","neg"],["R²","pos"],["MSE","neg"]].forEach(([k, cls]) => {
+        mlEl.innerHTML += `
+          <div class="stat-card">
+            <div class="stat-label">ML · ${k}</div>
+            <div class="stat-value ${cls}">${data.metrics[k]}</div>
+          </div>`;
+      });
+      mlEl.style.display = "grid";
+
+      // Charts
+      const setChart = (id, key) => {
+        document.getElementById(id).src = `data:image/png;base64,${data.charts[key]}`;
+      };
+      setChart("chart-price",   "price_ma");
+      setChart("chart-volume",  "volume");
+      setChart("chart-rsi",     "rsi");
+      setChart("chart-macd",    "macd");
+      setChart("chart-returns", "returns");
+      setChart("chart-ml",      "ml");
+      document.getElementById("charts-section").style.display = "block";
+
+      // Forecast table
+      const tbody = document.getElementById("forecast-tbody");
+      tbody.innerHTML = "";
+      let prev = null;
+      data.forecast.forEach((row, i) => {
+        const change = prev !== null ? (row.price - prev) : 0;
+        const cls = i === 0 ? "" : change >= 0 ? "up" : "down";
+        const arrow = i === 0 ? "" : change >= 0 ? "▲" : "▼";
+        tbody.innerHTML += `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${row.date}</td>
+            <td>$${row.price.toFixed(2)}</td>
+            <td class="${cls}">${arrow} ${i > 0 ? Math.abs(change).toFixed(2) : "—"}</td>
+          </tr>`;
+        prev = row.price;
+      });
+      document.getElementById("forecast-section").style.display = "block";
+
+      // Scroll to results
+      statsRow.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    } catch (err) {
+      clearInterval(msgInterval);
+      const errEl = document.getElementById("error-box");
+      errEl.textContent = "Error: " + err.message;
+      errEl.style.display = "block";
+    } finally {
+      document.getElementById("loading").style.display = "none";
+      runBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
