@@ -149,9 +149,7 @@ Flask → Base64 charts → Browser
 
 ---
 
-## 👤 Author
 
-**Mustafijur Rahman**
 GitHub: [@MustafijurRahman02](https://github.com/MustafijurRahman02)
 
 ---
